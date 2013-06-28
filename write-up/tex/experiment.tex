@@ -1,0 +1,234 @@
+
+%
+% Experiments
+%
+
+\section{Experiment}
+In the following section the experimental procedure is described. First we
+introduce the general experimental environment and then continue to describe
+the simulation details used in the aggregation and coordinated movement
+experiments.
+
+\subsection{Experimental setup}
+As a general approach to the overall experiment a five step process was used
+that can be roughly described as follows:
+
+First the real robot hardware needs to be defined. After that a simulator is
+developed that allows different detail levels for the agent models
+representing the robots. Then a simplified model is used as a starting point
+to construct experiments to evolve controllers for the S-Bots in a
+reasonable amount of time. Successfully evolved controllers using the
+simplified model are then improved using an increased level of detail.
+Finally, the results of the experiments featuring the highest level of detail
+are then ported to the real hardware.
+\ \\
+\begin{figure}[h]
+  \centering
+    \includegraphics[width=0.8\linewidth]{pics/01.jpg}
+  \caption{a) Real hardware S-Bot b) Detailed simulation model c) Simplified
+           simulation model}
+  \label{}
+\end{figure}
+
+%
+% Aggregation
+%
+
+\subsection{Aggregation}
+For the aggregation experiments a very simplified model of the S-Bots was used.
+Nearly every feature of the sbot was omitted, leaving only 2 wheels, 8
+proximity sensors and 3 sound sensors.
+
+\subsubsection{Simulation details}
+The simulation environment consisted of a flat, obstacle free area covering an
+equivalent of $3\times 3$ meters. In this area the S-Bots could move freely, permanently
+emitting a sound signal that could be recognized within an approximate
+radius of 75 cm. Noise was simulated by a uniformly distributed random signal
+within 5\% of the senders saturation value.
+\ \\
+
+As described earlier a neural network was used to represent a successful
+mapping of the data received by the 3 sound and 8 proximity sensors to the
+motors of the 2 wheels of each S-Bot. Therefore the neural network consisted
+of 12 input neurons (including a bias input) representing the input sensors
+and which where each directly connected to the 2 output neurons representing
+the motor outputs. Therefore the neural network contained 24 connections, with
+each connection being weighted within [-10, +10] and represented by a 8-bit
+bit string. This results in a $(12 \times 12) \times 8$ bit string representing a full
+controller which is called the \textit{genotype}.
+
+\subsubsection{Evolutionary algorithm}
+The evolutionary algorithm starts with a random population of 100 genotypes,
+each containing all the needed connection weights of the neural network and
+therefore representing a full controller for the S-Bots.
+
+These 100 random genotypes represent the first generation of an evolutionary
+run, which in this experiment stretches over 100 generations.
+To obtain a new generation of genotypes, each of the genotypes of the
+current generation needs to be tested in the simulation environment described
+above.
+\ \\
+
+To evaluate the aggregation performance of a single genotype, it is tested over
+8 \textit{epochs} where the final performance value is the average of these
+8 epochs. An epoch represents an experiment where a random number of S-Bots
+between 4-8 is spawned in the simulation environment described above, each
+configured with the current genotype to be tested. Each epoch lasts 900
+simulation cycle and each simulation cycle represents 100 ms of real time.
+
+The aggregation quality of a genotype for one epoch is measured by 2
+performance criteria: how much did the S-Bots move to their center
+of mass and how much did they move straight forward in doing so. Both criteria
+are measured for each simulation cycle by averaging over the number of S-Bots
+used in the specific epoch and are then multiplied. The final fitness of an
+epoch is then achieved by averaging over the whole epoch duration. Again,
+this is repeated 8 times for each of the 100 genotypes of the current
+generation.
+\ \\
+
+After the evaluation of the entire generation the 20 best genotypes are then
+selected to produce 5 offspring each. Mutation is applied by randomly flipping each bit with a
+3\% chance.
+
+After 100 generations the evolution stops, thus calling this an evolutionary
+run. In the aggregation experiment 20 of those evolutionary runs where done
+and the averaged performance of those 20 runs can be seen in Figure 2 where
+it is important to keep in mind, that the performance is the product of both,
+the gathering and the straight forward movement quality of the controllers.
+\ \\
+
+\begin{figure}[]
+  \centering
+    \includegraphics[width=0.6\linewidth]{pics/03.png}
+  \caption{Aggregation performance averaged over 20 evolutionary runs}
+  \label{}
+\end{figure}
+
+To evaluate the scalability of the evolved controllers each of those 20
+controllers was then again tested against different group sizes in the pattern
+4, 8, 12, \dots, 40 with 100 test runs for each group size. The final results of
+that test can seen in Figure 3. This shows, that in theory, one can evolve
+controller in an limited environment using only limited group sizes which
+then still deliver acceptable performance once that is limit doesn't apply
+anymore.However, it is worthy to keep in mind, that the simulation area of
+$3\times 3$ meters was not scaled to cope with an increasing group size, hence
+rendering it somewhat easy for larger groups to aggregate.
+\ \\
+
+\begin{figure}[h!]
+  \centering
+    \includegraphics[width=0.8\linewidth]{pics/06.png}
+  \caption{Aggregation performance when confronted with increasing group sizes}
+  \label{}
+\end{figure}
+
+\subsubsection{Observed behavior}
+Completing the aggregation experiment are observed behaviors that seemed to
+have been evolved in all evolutionary runs. These observations include that
+solitary S-Bots seem to roam the complete area within large circles, whereas
+smaller groups tend to develop a certain following behavior once aggregated,
+where each S-Bot revolves around the center of the group and the group as a
+whole moves around the area in small circles, always sticking together once
+aggregated. Larger groups however never seem to reach a comparable stable
+state. They slowly roam the area in larger circles, continuously picking up
+but also losing single S-Bots.
+
+%
+% Coordinated Movement
+%
+
+\subsection{Coordinated Movement}
+In the coordinated movement experiment the simplified simulation model was
+used once more. However, the experiment is completely different compared to the
+aggregation experiment, since now, it was tested whether controller could
+be evolved that result in collective movement when a certain number of S-Bots
+already are aggregated and physically connected.
+
+\subsubsection{Simulation details}
+In this experiment the same general simulation setup as within the aggregation
+experiment was being used. Now however, the S-Bots are already connected via
+rigid links representing their grippers. Therefore the sound and proximity
+sensors from the aggregation experiment are being omitted and four
+traction sensors are being introduced.
+
+Hence the neural network now only features 5 input neurons, representing the
+4 traction sensors and a bias neuron, being directly mapped to the 2 motor
+output neurons. A connection weight is once again represented by a 8-bit
+bit string mapping to the interval [-10, 10] but since there are less
+connections in the neural network a single genotype only consists of $(5\times 2) \times 8$ bits.
+\ \\
+
+Since the rigid link between the S-Bots
+does not prevent each S-Bot from having an orientation of it's own, the
+traction sensors are connected to the links and are measuring the angle and
+force of the traction received by each S-Bot. More precisely, via the
+traction sensors each S-Bot receives the average direction and force in which
+the group as a whole is trying to move and therefore can calculate the
+difference between the average direction of the group and it's own orientation
+and hence the severity of it's own misalignment compared to the majority of
+the group.
+
+\subsubsection{Evolutionary algorithm}
+The evolutionary algorithm did not change significantly, compared to the
+aggregation experiment. Once again it starts with 100 random genotypes as
+a first generation and evolves each next generation by evaluating each
+genotype for 5 epochs, where each epoch features a fixed group size of 4
+S-Bots, including each S-Bot spawning with a different orientation. The
+fitness of a controller is measured at the end of each epoch and is the
+Euclidean distance between the group's starting position and the group's
+position at the end of the epoch. The final fitness of a controller is again
+the average of all 5 epochs, where each epoch consists of 150 simulation
+cycles.
+\ \\
+
+One evolutionary run lasts 100 generation where in each generation the 20
+best genotypes are selected to produce 5 offspring,
+each with a 3\% chance of flipping each bit. After 20 evolutionary runs, the best genotype of each
+run was selected and then tested again for increasing group sizes in the
+pattern 4, 8, 12, ..., 40. The results are shown in Figure 4.
+
+\begin{figure}[h]
+  \centering
+    \includegraphics[width=0.8\linewidth]{pics/15.png}
+  \caption{Coordinated movement performance for increasing group sizes}
+  \label{}
+\end{figure}
+
+\subsubsection{Observed behavior}
+The behavior, that successful controllers seem to have evolved during the
+evolutionary run seems to be, that the traction intensity determines how
+drastically a single S-Bots changes it's orientation. This means that for
+example if the S-Bots spawn with almost identical orientations, then the
+traction received by each S-Bots is near 0 and so each can continue in that
+exact direction with full speed. If however 3 S-Bots spawn with near identical
+orientations and only one S-Bot spawns with a highly misaligned orientation,
+then this S-Bot will receive an immense traction and will change it's
+orientation drastically, whereas the other S-Bots will only tune their
+orientation gracefully.
+\ \\
+
+This results in 2 side effects which are object avoidance and object pulling
+behavior. When the group hits an object, the touching S-Bot receives the
+impact as a high traction in the opposite direction to it's orientation and
+the other S-Bots receive a similar traction and therefore change their
+orientation rather drastically.
+\ \\
+
+Object pulling is possible with more evolved controllers where a certain
+numbness has evolved in a positive fashion because it can be
+beneficial for the group if a single S-Bot continues in it's own direction
+even if it receives a slight traction in the opposite direction. Therefore,
+if the S-Bots are connected to an object, the pulling S-Bots receive the
+object as a slight traction in the opposite direction which to them is
+identical to an S-Bot still trying to match the groups direction. Luckily
+they ignore this traction hence resulting in them continuing their movement
+and pulling the object as can be seen in Figure 5.
+\ \\
+
+\begin{figure}[h]
+  \centering
+    \includegraphics[width=0.65\linewidth]{pics/14.png}
+  \caption{a) S-Bots connected to an object b) Resulting object pulling behavior}
+  \label{}
+\end{figure}
+

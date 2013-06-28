@@ -1,0 +1,4 @@
+\section{Summary}
+As we have learned, evolving controllers for a \emph{Swarm Bot} is possible, using a multi-stage approach. However, there are some drawbacks:\\
+First, the evaluation of the fitness function requires global information. But in order to be able to adapt to new environments, S-Bots need to be able to evolve controllers during operation. With the current approach, only environments known at simulation time can be considered for evolution.\\
+Second, the quality of evolved controllers depends on the quality of the simulation environment. As evolution on real hardware is unrealistic from a time perspective, the simulator has to implement as much detail as possible in order to evolve quality controllers. On the other hand, too much detail slows down the simulation significantly. Therefore, a good tradeoff between controller quality and simulation time has to be found.
